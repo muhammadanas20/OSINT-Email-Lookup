@@ -28,14 +28,28 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json({ limit: "5mb" }));
 
-// Ensure data directory and files exist
-const DATA_DIR = path.join(__dirname, "data");
+// Vercel's deployed function bundle is read-only. Use its writable /tmp volume there,
+// while keeping the existing project-local files for normal Node deployments.
+// Serverless history is best-effort and lasts only as long as the warm instance.
+const IS_SERVERLESS = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const DATA_DIR = process.env.DATA_DIR || (IS_SERVERLESS
+  ? path.join("/tmp", "behind-the-email")
+  : path.join(__dirname, "data"));
 const HISTORY_FILE = path.join(DATA_DIR, "history.json");
 const BULK_FILE = path.join(DATA_DIR, "bulk_jobs.json");
 
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-if (!fs.existsSync(HISTORY_FILE)) fs.writeFileSync(HISTORY_FILE, JSON.stringify([], null, 2));
-if (!fs.existsSync(BULK_FILE)) fs.writeFileSync(BULK_FILE, JSON.stringify([], null, 2));
+function initializeJsonStore() {
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    if (!fs.existsSync(HISTORY_FILE)) fs.writeFileSync(HISTORY_FILE, "[]");
+    if (!fs.existsSync(BULK_FILE)) fs.writeFileSync(BULK_FILE, "[]");
+  } catch (error) {
+    // Search must remain available even when optional history persistence is not.
+    console.warn(`History storage unavailable at ${DATA_DIR}: ${error.message}`);
+  }
+}
+
+initializeJsonStore();
 
 function readJson(filePath) {
   try {
@@ -180,21 +194,25 @@ async function runFullEnrichment(rawEmail) {
     if (tl) addEmailModule(tl);
   } catch {}
 
-  // ——— Phase 3: Username social footprint (derive handles → check 16 platforms) ———
-  try {
-    const knownUsernames = [
-      ...summary.usernames.map((u) => u.value),
-      ...emailModules.filter((m) => m.profile?.username).map((m) => m.profile.username),
-      ...emailModules.filter((m) => m.extras?.username).map((m) => m.extras.username),
-    ];
-    const candidates = deriveCandidateUsernames(email, knownUsernames);
-    if (candidates.length > 0) {
-      const socialResults = await checkUsernameSocials(candidates);
-      const socialModules = buildSocialUsernameModules(socialResults);
-      for (const sm of socialModules) addEmailModule(sm);
+  // ——— Phase 3: Username social footprint (derive handles → check platforms) ———
+  // Showcase profiles already contain a curated social footprint. Re-probing every
+  // platform adds no data and can push a serverless request past its time limit.
+  if (!showcase) {
+    try {
+      const knownUsernames = [
+        ...summary.usernames.map((u) => u.value),
+        ...emailModules.filter((m) => m.profile?.username).map((m) => m.profile.username),
+        ...emailModules.filter((m) => m.extras?.username).map((m) => m.extras.username),
+      ];
+      const candidates = deriveCandidateUsernames(email, knownUsernames);
+      if (candidates.length > 0) {
+        const socialResults = await checkUsernameSocials(candidates);
+        const socialModules = buildSocialUsernameModules(socialResults);
+        for (const sm of socialModules) addEmailModule(sm);
+      }
+    } catch (e) {
+      console.warn("username social check failed", e.message);
     }
-  } catch (e) {
-    console.warn("username social check failed", e.message);
   }
 
   // ——— Phase 4: WhatsApp via phone numbers (breach / recovery) ———
@@ -347,11 +365,12 @@ app.get("/api/search/stream", async (req, res) => {
     });
   };
 
-  // Burst showcase modules first (realistic stagger before live probes finish)
+  // Burst showcase modules first. Avoid artificial delays in serverless functions:
+  // they consume the execution budget without doing useful work.
   if (showcaseModulesToStream.length > 0) {
     for (let i = 0; i < showcaseModulesToStream.length; i++) {
       const mod = showcaseModulesToStream[i];
-      await new Promise((r) => setTimeout(r, 75 + Math.random() * 110));
+      if (!IS_SERVERLESS) await new Promise((r) => setTimeout(r, 20));
       // Temporarily set completed to reflect burst progress for correct percent
       const burstCompleted = i;
       const savedCompleted = completed;
@@ -429,23 +448,25 @@ app.get("/api/search/stream", async (req, res) => {
     if (tl) emitEmailModule(tl);
   } catch {}
 
-  // ——— Phase: Username social footprint (16 platforms) ———
-  try {
-    sendEvent("progress", { checking: "Username social footprint (16 platforms)", completed, total: total + 2, percent: Math.min(97, Math.round(((completed + 1) / (total + 2)) * 100)) });
-    const knownUsernames = [
-      ...summary.usernames.map((u) => u.value),
-      ...emailModules.filter((m) => m.profile?.username).map((m) => m.profile.username),
-    ];
-    const cands = deriveCandidateUsernames(email, knownUsernames);
-    if (cands.length > 0) {
-      const socialResults = await checkUsernameSocials(cands);
-      const socialModules = buildSocialUsernameModules(socialResults);
-      for (const sm of socialModules) {
-        await new Promise((r) => setTimeout(r, 45));
-        emitEmailModule(sm);
+  // ——— Phase: Username social footprint ———
+  // Curated showcases already include these modules, so only probe live searches.
+  if (!showcase) {
+    try {
+      sendEvent("progress", { checking: "Username social footprint", completed, total: total + 2, percent: Math.min(97, Math.round(((completed + 1) / (total + 2)) * 100)) });
+      const knownUsernames = [
+        ...summary.usernames.map((u) => u.value),
+        ...emailModules.filter((m) => m.profile?.username).map((m) => m.profile.username),
+      ];
+      const cands = deriveCandidateUsernames(email, knownUsernames);
+      if (cands.length > 0) {
+        const socialResults = await checkUsernameSocials(cands);
+        const socialModules = buildSocialUsernameModules(socialResults);
+        for (const sm of socialModules) {
+          emitEmailModule(sm);
+        }
       }
-    }
-  } catch (e) { console.warn("SSE username social failed", e.message); }
+    } catch (e) { console.warn("SSE username social failed", e.message); }
+  }
 
   // ——— Phase: WhatsApp via phones ———
   try {
@@ -585,6 +606,23 @@ app.get("/api/image-proxy", async (req, res) => {
   }
 });
 
+// Lightweight deployment diagnostic that does not call any external services.
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true, runtime: IS_SERVERLESS ? "serverless" : "node" });
+});
+
+// Keep API failures machine-readable so the frontend never receives Express HTML.
+app.use("/api", (err, req, res, next) => {
+  console.error("API request failed:", err);
+  if (res.headersSent) return res.end();
+  return res.status(500).json({
+    error: {
+      message: "Internal server error",
+      cause: process.env.NODE_ENV === "production" ? undefined : err.message,
+    },
+  });
+});
+
 // Serve static frontend
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -592,6 +630,12 @@ app.use((req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Behind the Email (Free Enterprise Edition) listening on http://0.0.0.0:${PORT}`);
-});
+// Vercel imports the Express app as a function. A real listener is only needed
+// when this file is launched directly for local/self-hosted use.
+if (!IS_SERVERLESS && require.main === module) {
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Behind the Email (Free Enterprise Edition) listening on http://0.0.0.0:${PORT}`);
+  });
+}
+
+module.exports = app;
