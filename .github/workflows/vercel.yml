@@ -15,7 +15,11 @@ jobs:
       - name: Install
         working-directory: behind-the-email
         run: npm install
+      - name: Skip deploy when Vercel secrets are missing
+        if: ${{ secrets.VERCEL_TOKEN == '' || secrets.ORG_ID == '' || secrets.PROJECT_ID == '' }}
+        run: echo "Skipping Vercel deploy because one or more required secrets are not configured."
       - name: Deploy to Vercel
+        if: ${{ secrets.VERCEL_TOKEN != '' && secrets.ORG_ID != '' && secrets.PROJECT_ID != '' }}
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
