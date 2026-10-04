@@ -570,6 +570,24 @@ if(!window.jspdf) window.jspdf = null;
     if(state) streamState.textContent = state;
   }
 
+  async function readJsonResponse(response){
+    const text = await response.text();
+    let body = null;
+    if(text){
+      try { body = JSON.parse(text); }
+      catch {
+        const detail = text.replace(/\s+/g, ' ').trim().slice(0, 180);
+        throw new Error(`Request failed (${response.status}): ${detail || 'non-JSON response'}`);
+      }
+    }
+    if(!response.ok){
+      const error = body?.error;
+      const detail = error?.cause || error?.message || (typeof error === 'string' ? error : null) || body?.message || response.statusText || 'request failed';
+      throw new Error(`Request failed (${response.status}): ${detail}`);
+    }
+    return body || {};
+  }
+
   searchForm.addEventListener('submit', async (e)=>{
     e.preventDefault();
     const email = emailInput.value.trim().toLowerCase();
@@ -1021,11 +1039,11 @@ if(!window.jspdf) window.jspdf = null;
       // fallback to non-stream API
       try{
         const r = await fetch('/api/v1/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
-        const j = await r.json();
+        const j = await readJsonResponse(r);
         if(j?.data?.profile){
           const p=j.data.profile;
           // render fallback report — use proper dedicated sections for timeline/social
-          currentReport={query:{kind:'email',value:email},subjects:{email,domain:email.split('@')[1]},status:p.status||'found',summary:p.summary||summary,emailModules:p.emailModules||[],domainModules:p.domainModules||[],meta:p.meta||{durationMs:Date.now()-t0}};
+          currentReport={query:{kind:'email',value:email},subjects:{email,domain:email.split('@')[1]},status:j.data.status||'found',summary:p.summary||summary,emailModules:p.emailModules||[],domainModules:p.domainModules||[],meta:j.data.meta||{durationMs:Date.now()-t0}};
           (currentReport.emailModules||[]).forEach(m=>{
             if(seen.has(m.module)) return;
             if(m.module==='google-timeline'){ seen.add(m.module); timelineData=m; renderTimeline(m); return; }
@@ -1144,7 +1162,7 @@ if(!window.jspdf) window.jspdf = null;
     const tbody = $('#bulkTable tbody'); tbody.innerHTML = `<tr><td colspan=8 class="muted">Streaming…</td></tr>`;
     try{
       const res = await fetch('/api/bulk-search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({emails})});
-      const data = await res.json();
+      const data = await readJsonResponse(res);
       bulkResults = data.results||[];
       $('#bulkMeta').textContent = `Done in ${data.durationMs} ms — ${data.foundCount}/${data.totalCount} found`;
       tbody.innerHTML = bulkResults.map(r=>{
@@ -1191,7 +1209,7 @@ if(!window.jspdf) window.jspdf = null;
     $('#apiRes').textContent='… loading …';
     try{
       const r = await fetch('/api/v1/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
-      const j = await r.json();
+      const j = await readJsonResponse(r);
       $('#apiRes').textContent = JSON.stringify(j,null,2);
       $('#apiReq').textContent = `curl -X POST ${location.origin}/api/v1/search \\\n  -H "Content-Type: application/json" \\\n  -d '{"email":"${email}"}'`;
     }catch(e){ $('#apiRes').textContent='Error: '+e.message }
@@ -1201,7 +1219,7 @@ if(!window.jspdf) window.jspdf = null;
   window.loadHistory = async ()=>{
     try{
       const r = await fetch('/api/history');
-      const j = await r.json();
+      const j = await readJsonResponse(r);
       const list = $('#historyList');
       const searches = j.searches||[];
       if(!searches.length){ list.innerHTML='<div class="muted small">No searches yet — run one above.</div>'; return; }
