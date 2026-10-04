@@ -1,3 +1,4 @@
+ HEAD
 # OSINT Email Lookup — Behind the Email (Free Clone)
 
 Free open-source clone of `behindthemail.com` / `behindtheemail.com` with **all paid-plan features unlocked for $0**.
@@ -50,3 +51,6 @@ See `BEHIND_THE_EMAIL_FREE_IMPLEMENTATION_PLAN.md` for complete 60-page architec
 
 ## License
 ISC — free for personal / research use. Respect target-site ToS and privacy laws.
+=======
+# OSINT-Email-Lookup
+
