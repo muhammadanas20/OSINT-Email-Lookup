@@ -1,0 +1,9 @@
+node_modules/
+.npm/
+.data/
+*.log
+.DS_Store
+.env
+behind-the-email/data/history.json
+behind-the-email/data/bulk_jobs.json
+behind-the-email/node_modules/

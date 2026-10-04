@@ -1,0 +1,1234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Behind the Email — Free Unlimited OSINT Lookup</title>
+<meta name="description" content="Free open-source clone of Behind the Email. Live OSINT email lookup: 46 modules, bulk search, breach intelligence, CSV/XLSX/PDF export, REST API — all free, no paywall." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{
+  --bg:#0a0a0b;
+  --bg-soft:#0f0f10;
+  --card:#121214;
+  --card-elev:#18181b;
+  --field:#1a1a1d;
+  --border:#232326;
+  --border-strong:#2e2e32;
+  --text:#fafafa;
+  --text-accent:#9aa0a6;
+  --text-faint:#6b7280;
+  --brand:#5ee4d1;
+  --brand-strong:#2dd4bf;
+  --brand-line:#5ee4d1;
+  --danger:#f87171;
+  --radius:14px;
+  --radius-lg:18px;
+  --radius-xl:22px;
+  --shadow:0 10px 40px rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background: radial-gradient(1200px 600px at 50% -10%, rgba(94,228,209,.08), transparent 60%), var(--bg);
+  color:var(--text);
+  font-family: Outfit, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration:none}
+.mono{font-family: JetBrains Mono, ui-monospace, monospace}
+.container{max-width:1120px;margin:0 auto;padding:0 20px}
+.topbar{
+  position:sticky;top:0;z-index:40;
+  backdrop-filter: blur(12px);
+  background: rgba(10,10,11,.72);
+  border-bottom:1px solid var(--border);
+}
+.topbar__inner{height:56px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:-.02em}
+.brand__mark{width:28px;height:28px;border-radius:8px;background:var(--brand);display:grid;place-items:center;color:#06201c;font-weight:800;font-size:14px}
+.nav{display:flex;gap:18px;align-items:center;font-size:13px;color:var(--text-accent)}
+.nav a{padding:6px 8px;border-radius:8px}
+.nav a:hover{color:var(--text);background:rgba(255,255,255,.06)}
+.badge-free{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:rgba(94,228,209,.12);border:1px solid rgba(94,228,209,.35);color:var(--brand);font-size:12px;font-weight:600}
+.badge-free i{width:6px;height:6px;border-radius:50%;background:var(--brand);display:inline-block;box-shadow:0 0 10px var(--brand)}
+.hero{padding:44px 0 10px;text-align:center}
+.hero h1{font-size:44px;line-height:1.05;letter-spacing:-.04em;margin:0;font-weight:700}
+.hero h1 span{color:var(--brand)}
+.hero p{max-width:640px;margin:14px auto 0;color:var(--text-accent);font-size:17px}
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+.search-card{max-width:760px;margin:28px auto 0;padding:10px}
+.search-row{
+  display:flex;gap:8px;align-items:center;
+  background:var(--field);
+  border:1px solid var(--border);
+  border-radius:var(--radius-xl);
+  padding:6px;
+  transition:border-color .2s, box-shadow .2s;
+}
+.search-row:focus-within{border-color:var(--brand-line);box-shadow:0 0 0 1px var(--brand-line) inset}
+.search-row input{
+  flex:1;min-width:0;background:transparent;border:0;outline:0;color:var(--text);
+  font-size:16px;padding:14px 14px 14px 8px;
+}
+.search-row input::placeholder{color:var(--text-faint)}
+.icon-mail{width:20px;height:20px;color:var(--text-faint);margin-left:12px;flex:0 0 auto}
+.btn{
+  appearance:none;border:0;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 16px;border-radius:12px;font-weight:600;font-size:14px;
+  transition:transform .06s, filter .15s, background .15s, border-color .15s;
+}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--brand);color:#06201c}
+.btn-primary:hover{filter:brightness(1.05)}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-ghost:hover{border-color:var(--border-strong);background:rgba(255,255,255,.04)}
+.btn-sm{padding:8px 12px;font-size:13px;border-radius:10px}
+.examples{max-width:760px;margin:14px auto 0;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 10px;border-radius:999px;
+  background:rgba(255,255,255,.06);border:1px solid var(--border);
+  font-size:12.5px;color:var(--text-accent);cursor:pointer;
+}
+.chip:hover{color:var(--text);border-color:var(--border-strong)}
+.chip b{color:var(--text);font-weight:600}
+.progress-wrap{max-width:760px;margin:14px auto 0;display:none}
+.progress-wrap.active{display:block}
+.progress-bar{height:6px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden}
+.progress-fill{height:100%;width:0;background:linear-gradient(90deg,var(--brand),#34d399);transition:width .35s}
+.progress-meta{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:12px;color:var(--text-accent)}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--brand);box-shadow:0 0 14px var(--brand);animation:pulse 1.1s infinite}
+@keyframes pulse{0%{opacity:.9;transform:scale(1)}50%{opacity:.5;transform:scale(.9)}100%{opacity:.9;transform:scale(1)}}
+.tabs{max-width:760px;margin:18px auto 0;display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.tab{padding:8px 14px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text-accent);font-size:13px;font-weight:600;cursor:pointer}
+.tab.active{background:var(--text);color:#0a0a0b;border-color:var(--text)}
+.notice{
+  max-width:760px;margin:16px auto 0;
+  padding:10px 14px;border-radius:12px;
+  background:rgba(94,228,209,.08);border:1px solid rgba(94,228,209,.25);
+  color:var(--brand);font-size:13px;text-align:center;
+}
+.results{max-width:1120px;margin:24px auto 0;display:none}
+.results.active{display:block}
+.results-head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
+.kicker{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint);font-weight:600}
+.h2{font-size:22px;letter-spacing:-.02em;font-weight:700;margin:2px 0}
+.meta-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.pill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 10px;border-radius:999px;
+  background:rgba(255,255,255,.06);border:1px solid var(--border);
+  font-size:12px;color:var(--text-accent)
+}
+.pill b{color:var(--text)}
+.grid-summary{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;margin-bottom:16px}
+@media (max-width:860px){.grid-summary{grid-template-columns:1fr}}
+.summary-card{padding:16px}
+.summary-grid{display:grid;grid-template-columns:120px 1fr;gap:16px}
+@media (max-width:560px){.summary-grid{grid-template-columns:1fr}}
+.avatar-wrap{width:108px;height:108px;border-radius:16px;overflow:hidden;background:var(--field);border:1px solid var(--border)}
+.avatar-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.summary-fields{display:flex;flex-direction:column;gap:10px}
+.field-label{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-faint);font-weight:600}
+.field-values{display:flex;flex-wrap:wrap;gap:6px}
+.tag{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 9px;border-radius:999px;
+  background:rgba(255,255,255,.06);border:1px solid var(--border);
+  font-size:12.5px;color:var(--text)
+}
+.tag a{color:var(--text)}
+.tag.mono{font-size:11.5px}
+.photos-strip{display:flex;gap:8px;flex-wrap:wrap}
+.photos-strip img{width:72px;height:72px;border-radius:10px;object-fit:cover;border:1px solid var(--border)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin:14px 0}
+.toolbar-left{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.select, .search-mini{
+  background:var(--field);border:1px solid var(--border);color:var(--text);
+  padding:8px 10px;border-radius:10px;font-size:13px;outline:0
+}
+.masonry{
+  column-count:3;column-gap:16px;
+}
+@media (max-width:980px){.masonry{column-count:2}}
+@media (max-width:640px){.masonry{column-count:1}}
+.mod{
+  break-inside:avoid;
+  margin:0 0 16px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  overflow:hidden;
+}
+.mod__head{padding:14px 14px 10px;display:flex;gap:10px;align-items:flex-start;justify-content:space-between;border-bottom:1px solid var(--border)}
+.mod__title{display:flex;gap:10px;align-items:center}
+.mark{
+  width:34px;height:34px;border-radius:10px;display:grid;place-items:center;
+  background:rgba(94,228,209,.14);border:1px solid rgba(94,228,209,.25);color:var(--brand);font-weight:800;font-size:12px;flex:0 0 auto
+}
+.mark img{width:18px;height:18px;object-fit:contain;display:block}
+.mod__name{font-weight:700;letter-spacing:-.02em;font-size:14px}
+.mod__cat{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint);font-weight:600}
+.chip-status{font-size:11px;padding:5px 8px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text-accent);font-weight:600}
+.chip-status.found{background:rgba(94,228,209,.15);border-color:rgba(94,228,209,.35);color:var(--brand)}
+.mod__body{padding:14px}
+.kv{display:flex;flex-direction:column;gap:10px}
+.kv-row{display:flex;flex-direction:column;gap:4px}
+.kv-label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint);font-weight:600}
+.kv-value{font-size:13px;color:var(--text);word-break:break-word}
+.kv-value a{color:var(--brand);text-decoration:underline;text-underline-offset:3px}
+.pos{padding:10px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--border)}
+.pos__head{display:flex;gap:10px;align-items:center}
+.pos__logo{width:32px;height:32px;border-radius:8px;background:var(--field);border:1px solid var(--border);display:grid;place-items:center;overflow:hidden}
+.pos__logo img{width:100%;height:100%;object-fit:cover}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip-mini{font-size:11.5px;padding:5px 8px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--text-accent)}
+.breach-table{width:100%;border-collapse:collapse;font-size:13px}
+.breach-table th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint);text-align:left;padding:8px;border-bottom:1px solid var(--border);font-weight:600}
+.breach-table td{padding:8px;border-bottom:1px solid rgba(35,35,38,.7);vertical-align:top}
+.badge-risk{padding:3px 7px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.12);color:#fecaca}
+.domain-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+@media (max-width:860px){.domain-row{grid-template-columns:1fr}}
+.domain-card{padding:14px}
+.domain-card h4{margin:0 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint)}
+.domain-card p{margin:0;color:var(--text);font-size:13px}
+.empty{padding:28px;text-align:center;color:var(--text-accent);border:1px dashed var(--border);border-radius:16px;background:rgba(255,255,255,.02)}
+.section{padding:32px 0;border-top:1px solid var(--border);margin-top:32px}
+.section h2{font-size:26px;letter-spacing:-.03em;margin:0}
+.section p.lead{color:var(--text-accent);max-width:720px}
+.bulk-card{max-width:760px;margin:16px auto 0;padding:16px}
+.bulk-row{display:flex;gap:10px;align-items:flex-start}
+.bulk-row textarea{
+  flex:1;min-height:140px;background:var(--field);border:1px solid var(--border);border-radius:14px;
+  color:var(--text);padding:12px;font-family:JetBrains Mono, monospace;font-size:12.5px;outline:0;resize:vertical
+}
+.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:14px;background:var(--card)}
+.table{width:100%;border-collapse:collapse;font-size:13px;min-width:720px}
+.table th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint);text-align:left;padding:10px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02);position:sticky;top:0}
+.table td{padding:10px;border-bottom:1px solid rgba(35,35,38,.6);vertical-align:top}
+.api-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+@media (max-width:900px){.api-grid{grid-template-columns:1fr}}
+.code{
+  background:#0e0e10;border:1px solid var(--border);border-radius:14px;padding:14px;
+  font-family:JetBrains Mono, monospace;font-size:12.5px;overflow:auto;white-space:pre;
+}
+.footer{padding:32px 0 40px;border-top:1px solid var(--border);margin-top:28px;color:var(--text-accent);font-size:13px}
+.footer a{color:var(--text);text-decoration:underline;text-underline-offset:3px}
+.history-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.history-item{
+  display:flex;gap:12px;align-items:center;justify-content:space-between;
+  padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--border)
+}
+.history-item b{font-size:13px}
+.muted{color:var(--text-accent)}
+.small{font-size:12px}
+.divider{height:1px;background:var(--border);margin:12px 0}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(80px);background:#1a1a1d;border:1px solid var(--border-strong);color:var(--text);padding:10px 14px;border-radius:12px;font-size:13px;box-shadow:var(--shadow);opacity:0;transition:transform .25s, opacity .25s;z-index:99;max-width:90vw;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<header class="topbar">
+  <div class="container topbar__inner">
+    <a class="brand" href="#">
+      <span class="brand__mark">◈</span>
+      <span>Behind the Email</span>
+      <span class="badge-free" title="All paid features unlocked for free"><i></i> Free • No Paywall</span>
+    </a>
+    <nav class="nav">
+      <a href="#search">Search</a>
+      <a href="#bulk">Bulk</a>
+      <a href="#api">API</a>
+      <a href="#history">History</a>
+      <a href="https://behindtheemail.com/pricing" target="_blank" rel="noreferrer" style="color:var(--brand)">Original →</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section class="hero">
+    <div class="badge-free" style="margin-bottom:12px">✦ Free Enterprise Clone — 46+ modules · Google Timeline · 16 social usernames · WhatsApp · Unlimited</div>
+    <h1>Look up any <span>email</span><br/>and see what’s public</h1>
+    <p>Streams live from Gravatar, GitHub, Microsoft, Adobe, Duolingo, breach intel, <b>Google Location Timeline</b> (Maps/Photos/Reviews synthesis), <b>16 username checks</b> (Instagram, Facebook, YouTube, TikTok, X, Snapchat, Reddit, Pinterest, Telegram, Twitch, Dribbble, SoundCloud, Threads, VK, GitHub, GitLab) and <b>WhatsApp</b> via phone — merged into one dossier. No limits, no paywall, never notifies the target.</p>
+  </section>
+
+  <div id="search" class="card search-card">
+    <form id="searchForm">
+      <label class="sr-only" for="emailInput">Email address</label>
+      <div class="search-row">
+        <svg class="icon-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+        <input id="emailInput" type="email" placeholder="Enter an email address" autocomplete="off" required spellcheck="false" />
+        <button class="btn btn-primary" id="searchBtn" type="submit">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          Search Free
+        </button>
+      </div>
+    </form>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" type="button" onclick="document.getElementById('emailInput').value='torvalds@linux-foundation.org'; document.getElementById('searchForm').requestSubmit()">Try torvalds@linux-foundation.org</button>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="fillDemo('satyan@microsoft.com')">Satya demo</button>
+    </div>
+  </div>
+
+  <div class="examples" id="examples">
+    <button class="chip" type="button" onclick="fillDemo('sarah.jenkins@acme.com')"><b>sarah.jenkins@acme.com</b> — demo showcase</button>
+    <button class="chip" type="button" onclick="fillDemo('satyan@microsoft.com')"><b>satyan@microsoft.com</b> — enterprise</button>
+    <button class="chip" type="button" onclick="fillDemo('torvalds@linux-foundation.org')"><b>torvalds@linux-foundation.org</b> — open source</button>
+    <button class="chip" type="button" onclick="fillDemo('test@gmail.com')"><b>test@gmail.com</b> — breach test</button>
+  </div>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-meta">
+      <span style="display:flex;gap:8px;align-items:center"><span class="pulse" id="pulse"></span><span id="progressText">Starting live search…</span></span>
+      <span id="progressPct" class="mono">0%</span>
+    </div>
+  </div>
+
+  <div class="notice" id="freeNotice">🎉 Free Enterprise: 0$/mo — <b>bulk 50/batch</b>, <b>breaches</b>, <b>CSV/XLSX/PDF</b>, <b>REST API</b> + <b>NEW: Google Timeline, 16 social handle checks (Insta/FB/YT/TikTok/X/Snap/Reddit/Pinterest/Telegram/Twitch/etc.) & WhatsApp</b> — all unlocked. Original charges $99.99/mo for Business.</div>
+
+  <div class="tabs" role="tablist" aria-label="Search mode">
+    <button class="tab active" data-tab="single" type="button">Single Search</button>
+    <button class="tab" data-tab="bulk" type="button" onclick="document.getElementById('bulk').scrollIntoView({behavior:'smooth'})">Bulk Search</button>
+    <button class="tab" data-tab="api" type="button" onclick="document.getElementById('api').scrollIntoView({behavior:'smooth'})">API Playground</button>
+    <button class="tab" data-tab="history" type="button" onclick="document.getElementById('history').scrollIntoView({behavior:'smooth'})">Recent</button>
+  </div>
+
+  <!-- Results -->
+  <section class="results" id="results">
+    <div class="results-head">
+      <div>
+        <div class="kicker" id="resultsKicker">Live results</div>
+        <div class="h2"><span id="resultsEmail" class="mono"></span> <span id="resultsStatus" class="pill" style="margin-left:8px"></span></div>
+        <div class="meta-row" style="margin-top:6px">
+          <span class="pill"><span id="resultsCount">0</span> <b>modules</b> answered</span>
+          <span class="pill mono"><span id="resultsDuration">—</span></span>
+          <span class="pill" id="resultsDomainPill"></span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" type="button" onclick="copyLink()">Copy link</button>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="exportCSV()">Export CSV</button>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="exportXLSX()">Export XLSX</button>
+        <button class="btn btn-primary btn-sm" type="button" onclick="exportPDF()">Download PDF</button>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="grid-summary" id="summaryGrid">
+      <div class="card summary-card" id="summaryCard">
+        <div class="field-label">Unified profile summary</div>
+        <div id="summaryContent" style="margin-top:10px"></div>
+      </div>
+      <div class="card summary-card" id="photosCard" style="display:none">
+        <div class="field-label">Photos & Maps contributions</div>
+        <div id="photosContent" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <!-- Google Location Timeline — full access, prominent -->
+    <div class="card" id="timelineSection" style="display:none;padding:18px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <div>
+          <div class="field-label" style="color:var(--brand)">◎ Google Location Timeline — Full Access</div>
+          <div class="small muted" id="timelineMeta"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <a class="btn btn-ghost btn-sm" id="timelineMapsLink" href="#" target="_blank" rel="noreferrer">Open in Maps ↗</a>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="document.getElementById('timelineEntries').scrollIntoView({behavior:'smooth'})">Jump to entries</button>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div id="timelineEntries" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div id="allLocations" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+        <div class="field-label">All locations found (every signal)</div>
+        <div id="allLocationsGrid" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+      </div>
+    </div>
+
+    <!-- Social Handles — full footprint, every platform -->
+    <div class="card" id="socialSection" style="display:none;padding:18px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <div>
+          <div class="field-label" style="color:var(--brand)">◎ Social Handles — 16 platforms</div>
+          <div class="small muted" id="socialMeta"></div>
+        </div>
+        <div class="small muted">Tap any handle to verify · No notification sent</div>
+      </div>
+      <div class="divider"></div>
+      <div id="socialGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px"></div>
+    </div>
+
+    <!-- Domain modules -->
+    <div class="domain-row" id="domainRow"></div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <input class="search-mini" id="filterSearch" placeholder="Filter modules…" style="min-width:180px" />
+        <select class="select" id="filterCategory">
+          <option value="all">All categories</option>
+          <option value="work">Work</option>
+          <option value="social">Social</option>
+          <option value="developer">Developer</option>
+          <option value="software">Software</option>
+          <option value="shopping">Shopping</option>
+          <option value="entertainment">Entertainment</option>
+          <option value="security">Security</option>
+          <option value="domain">Domain</option>
+        </select>
+        <select class="select" id="filterDepth">
+          <option value="all">All depths</option>
+          <option value="rich">Rich</option>
+          <option value="basic">Basic</option>
+        </select>
+      </div>
+      <div class="muted small"><span id="visibleCount">0</span> visible • <span class="mono" id="streamState">idle</span></div>
+    </div>
+
+    <div class="masonry" id="masonry"></div>
+    <div id="emptyState" class="empty" style="display:none">No modules matched your filter. Try “All categories”.</div>
+  </section>
+
+  <section class="section" id="bulk">
+    <h2>Bulk search <span style="color:var(--brand)">(free)</span></h2>
+    <p class="lead">Original Business plan limits to 50/batch at $99.99/mo. Here it’s unlimited and free. Paste up to 50 emails, run once, and export everything.</p>
+    <div class="card bulk-card">
+      <div class="bulk-row">
+        <textarea id="bulkInput" placeholder="Paste emails, one per line or comma-separated&#10;sarah.jenkins@acme.com&#10;satyan@microsoft.com&#10;torvalds@linux-foundation.org"></textarea>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-primary" type="button" onclick="runBulk()">Run Bulk (≤50)</button>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="fillBulkDemo()">Load demo set</button>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="exportBulkCSV()">Export CSV</button>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="exportBulkXLSX()">Export XLSX</button>
+        </div>
+      </div>
+      <div id="bulkMeta" class="muted small" style="margin-top:10px"></div>
+      <div class="table-wrap" id="bulkTableWrap" style="display:none;margin-top:12px">
+        <table class="table" id="bulkTable">
+          <thead><tr><th>Status</th><th>Email</th><th>LinkedIn</th><th>GitHub</th><th>Gravatar</th><th>MS</th><th>Breaches</th><th>Duration</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="api">
+    <h2>REST API <span style="color:var(--brand)">(free)</span></h2>
+    <p class="lead">Original Pro plan unlocks <span class="mono">POST /v1/search</span> at $29.99/mo. Your clone exposes <span class="mono">POST /api/v1/search</span> with no key, no limits — same shape.</p>
+    <div class="api-grid">
+      <div>
+        <div class="kicker">Request</div>
+        <div class="code" id="apiReq">curl -X POST http://localhost:3000/api/v1/search \
+  -H "Content-Type: application/json" \
+  -d '{"email":"sarah.jenkins@acme.com"}'</div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <input id="apiEmail" class="search-mini" value="sarah.jenkins@acme.com" style="flex:1" />
+          <button class="btn btn-primary btn-sm" type="button" onclick="runApi()">Try API</button>
+        </div>
+      </div>
+      <div>
+        <div class="kicker">Response</div>
+        <div class="code" id="apiRes" style="max-height:320px;white-space:pre-wrap;word-break:break-word">— press “Try API” —</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="history">
+    <h2>Recent searches</h2>
+    <p class="lead">Persisted to <span class="mono">/data/history.json</span> (last 100). Reload-safe. This is the “Recent searches” dashboard page unlocked for free.</p>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-ghost btn-sm" type="button" onclick="loadHistory()">Refresh</button>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="clearHistory()">Clear</button>
+    </div>
+    <div id="historyList" class="history-list"></div>
+  </section>
+
+  <footer class="footer">
+    <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between">
+      <div>
+        <b style="color:var(--text)">Behind the Email — Free Enterprise Edition</b><br/>
+        Open-source OSINT, 46 modules, breach intelligence, bulk & exports — $0/mo. Not affiliated with behindtheemail.com.
+      </div>
+      <div style="text-align:right" class="small muted">
+        Built from reverse-engineered Next.js chunks + live OSINT collectors.<br/>
+        <a href="https://behindtheemail.com" target="_blank" rel="noreferrer">Original site</a> · <a href="/api/history">JSON history</a> · <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false">Back to top ↑</a>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<script>
+// Lightweight inline XLSX shim for preview iframe (no external CDN needed) — full CDN still optional when online
+if(!window.XLSX) window.XLSX = { utils:{ aoa_to_sheet(rows){ return {rows}; }, book_new(){ return {Sheets:{}, SheetNames:[]}; }, book_append_sheet(wb, ws, name){ wb.Sheets[name]=ws; wb.SheetNames.push(name); if(!wb._rows) wb._rows=ws.rows; } }, writeFile(wb, filename){
+  // Fallback: generate CSV from first sheet if CDN not loaded (iframe sandbox has no network)
+  const rows = wb._rows || (wb.Sheets[wb.SheetNames[0]]&&wb.Sheets[wb.SheetNames[0]].rows) || [];
+  const csv = rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename.replace(/\.xlsx$/i,'.csv'); document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),2000);
+}};
+if(!window.jspdf) window.jspdf = null;
+</script>
+<script>
+(function(){
+  const $ = s=>document.querySelector(s);
+  const emailInput = $('#emailInput');
+  const searchForm = $('#searchForm');
+  const searchBtn = $('#searchBtn');
+  const progressWrap = $('#progressWrap');
+  const progressFill = $('#progressFill');
+  const progressText = $('#progressText');
+  const progressPct = $('#progressPct');
+  const results = $('#results');
+  const resultsEmail = $('#resultsEmail');
+  const resultsStatus = $('#resultsStatus');
+  const resultsCount = $('#resultsCount');
+  const resultsDuration = $('#resultsDuration');
+  const resultsDomainPill = $('#resultsDomainPill');
+  const masonry = $('#masonry');
+  const summaryContent = $('#summaryContent');
+  const photosCard = $('#photosCard');
+  const photosContent = $('#photosContent');
+  const domainRow = $('#domainRow');
+  const filterSearch = $('#filterSearch');
+  const filterCategory = $('#filterCategory');
+  const filterDepth = $('#filterDepth');
+  const visibleCount = $('#visibleCount');
+  const streamState = $('#streamState');
+  const emptyState = $('#emptyState');
+  const timelineSection = $('#timelineSection');
+  const timelineEntries = $('#timelineEntries');
+  const timelineMeta = $('#timelineMeta');
+  const allLocationsGrid = $('#allLocationsGrid');
+  const timelineMapsLink = $('#timelineMapsLink');
+  const socialSection = $('#socialSection');
+  const socialGrid = $('#socialGrid');
+  const socialMeta = $('#socialMeta');
+
+  let currentReport = null;
+  let activeModules = [];
+  let socialAcc = [];
+  let timelineData = null;
+  let streamController = null;
+  let bulkResults = [];
+
+  function toast(msg, ms=3200){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast._h); toast._h=setTimeout(()=>t.classList.remove('show'), ms); }
+  window.addEventListener('error', e=>{ console.error(e.error||e.message); toast('JS error: '+(e.error?.message||e.message).slice(0,120)); });
+  window.addEventListener('unhandledrejection', e=>{ console.error(e.reason); toast('Error: '+String(e.reason).slice(0,120)); });
+  // Try to load full XLSX/jsPDF when network is available (non-blocking, ignored in sandboxed preview)
+  (function loadOptionalLibs(){
+    const tryLoad = (src)=> new Promise(res=>{
+      const s=document.createElement('script'); s.src=src; s.async=true;
+      s.onload=()=>res(true); s.onerror=()=>res(false);
+      document.head.appendChild(s);
+      setTimeout(()=>res(false), 4000);
+    });
+    // Fire-and-forget — preview iframe has no network, so failure is silent (CSV/print fallback already works)
+    tryLoad('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js').then(ok=>console.log('XLSX CDN', ok?'loaded':'offline — CSV fallback active'));
+    tryLoad('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js').then(ok=>console.log('jsPDF CDN', ok?'loaded':'offline — print fallback active'));
+  })();
+
+  const MODULE_ICONS = {
+    linkedin:'in', github:'gh', gitlab:'gl', gravatar:'gv', microsoft:'ms', teams:'tm',
+    'google-profile':'gp','google-reviews':'gr','google-photos':'gp','google-timeline':'gt', tiktok:'tt', vsco:'vs', flickr:'fl',
+    duolingo:'dl','chess.com':'cc', etsy:'et', adobe:'ad', 'data-breach':'db',
+    'email-service':'mx','email-pattern':'ep', website:'wb',
+    spotify:'sp', notion:'no', pinterest:'pi', dropbox:'dbx', atlassian:'at', replit:'rp', amazon:'am',
+    wordpress:'wp', firefox:'fx', protonmail:'pm', tumblr:'tb', x:'x', patreon:'pa', 'last.fm':'lf',
+    instagram:'ig', facebook:'fb', youtube:'yt', snapchat:'sc', reddit:'rd', medium:'md', telegram:'tg', twitch:'tw',
+    dribbble:'dr', behance:'be', soundcloud:'sc', threads:'th', vk:'vk', whatsapp:'wa', vimeo:'vi'
+  };
+  const CATEGORY_LABEL = {work:'Work',social:'Social',developer:'Developer',software:'Software',shopping:'Shopping',entertainment:'Entertainment',security:'Security',domain:'Domain'};
+  function fmtDate(s){ if(!s) return '—'; try{return new Date(s).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'})}catch{return s} }
+  function escapeHtml(s){ return String(s).replace(/[&<>"]/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])) }
+
+  window.fillDemo = (email)=>{
+    emailInput.value = email;
+    searchForm.requestSubmit();
+    window.scrollTo({top:0,behavior:'smooth'});
+  };
+  window.fillBulkDemo = ()=>{
+    $('#bulkInput').value = 'sarah.jenkins@acme.com\nsatyan@microsoft.com\ntorvalds@linux-foundation.org\ntest@gmail.com\nhello@acme.com\ninfo@microsoft.com\nadmin@github.com\nsupport@duolingo.com';
+  };
+
+  function setProgress(pct, text, state){
+    progressFill.style.width = pct + '%';
+    progressPct.textContent = Math.round(pct) + '%';
+    if(text) progressText.textContent = text;
+    if(state) streamState.textContent = state;
+  }
+
+  searchForm.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const email = emailInput.value.trim().toLowerCase();
+    if(!email || !email.includes('@')) return;
+    if(streamController){ try{streamController.abort()}catch{} }
+    streamController = new AbortController();
+    currentReport = null;
+    activeModules = [];
+    socialAcc = [];
+    timelineData = null;
+    masonry.innerHTML = '';
+    domainRow.innerHTML = '';
+    summaryContent.innerHTML = '';
+    photosContent.innerHTML = '';
+    photosCard.style.display='none';
+    timelineSection.style.display='none';
+    timelineEntries.innerHTML='';
+    allLocationsGrid.innerHTML='';
+    socialSection.style.display='none';
+    socialGrid.innerHTML='';
+    results.classList.remove('active');
+    progressWrap.classList.add('active');
+    searchBtn.disabled=true; searchBtn.innerHTML='Searching…';
+    setProgress(6,'Resolving MX & pattern…','live');
+    resultsEmail.textContent = email;
+    streamState.textContent='streaming';
+    resultsStatus.textContent='streaming…';
+    resultsStatus.style.background='rgba(94,228,209,.15)';
+    resultsStatus.style.borderColor='rgba(94,228,209,.35)';
+    resultsStatus.style.color='var(--brand)';
+
+    // Build report incrementally
+    const summary = {profilePictures:[],names:[],usernames:[],locations:[],links:[],phoneNumbers:[],dates:[],photos:[]};
+    const emailModulesAcc = [];
+    const domainModulesAcc = [];
+    const seen = new Set();
+    let total = 10, completed=0;
+
+    function renderSummary(){
+      if(summary.profilePictures.length||summary.names.length||summary.usernames.length||summary.locations.length||summary.links.length||summary.phoneNumbers.length||summary.dates.length){
+        const avatars = summary.profilePictures.slice(0,4).map(p=>`<img src="${escapeHtml(p.url)}" alt="" style="width:42px;height:42px;border-radius:10px;object-fit:cover;border:1px solid var(--border)" onerror="this.style.display='none'">`).join('');
+        const names = summary.names.map(n=>`<span class="tag">${escapeHtml(n.value)}<span class="muted" style="font-size:10px"> · ${escapeHtml(n.module)}</span></span>`).join('');
+        const users = summary.usernames.map(u=>`<span class="tag mono">@${escapeHtml(u.value)}<span class="muted" style="font-size:10px"> · ${escapeHtml(u.module)}</span></span>`).join('');
+        const locs = summary.locations.map(l=>`<span class="tag">${escapeHtml(l.location||l.countryCode||'—')}<span class="muted" style="font-size:10px"> · ${escapeHtml(l.module)}</span></span>`).join('');
+        const links = summary.links.slice(0,10).map(l=>`<a class="tag mono" href="${escapeHtml(l.url)}" target="_blank" rel="noreferrer">${escapeHtml(l.url.replace(/^https?:\/\//,'' ).slice(0,36))} ↗</a>`).join('');
+        const phones = summary.phoneNumbers.map(p=>`<span class="tag mono">${escapeHtml(p.value)}</span>`).join('');
+        const dates = summary.dates.slice(0,8).map(d=>`<span class="tag mono">${escapeHtml(d.kind)}: ${escapeHtml(fmtDate(d.value))}</span>`).join('');
+        summaryContent.innerHTML = `
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">${avatars || '<span class="muted small">No avatars yet — streaming…</span>'}</div>
+          <div class="divider"></div>
+          <div class="kv">
+            ${names?`<div class="kv-row"><div class="kv-label">Names</div><div class="field-values">${names}</div></div>`:''}
+            ${users?`<div class="kv-row"><div class="kv-label">Usernames</div><div class="field-values">${users}</div></div>`:''}
+            ${locs?`<div class="kv-row"><div class="kv-label">Locations — full access</div><div class="field-values">${locs}</div><div class="small muted" style="margin-top:4px">Every location extracted from all modules — also shown in timeline below with Maps links</div></div>`:''}
+            ${links?`<div class="kv-row"><div class="kv-label">Links</div><div class="field-values">${links}</div></div>`:''}
+            ${phones?`<div class="kv-row"><div class="kv-label">Phones</div><div class="field-values">${phones}</div></div>`:''}
+            ${dates?`<div class="kv-row"><div class="kv-label">Dates</div><div class="field-values">${dates}</div></div>`:''}
+            ${!names&&!users&&!locs&&!links&&!phones&&!dates?'<span class="muted small">No summary signals yet — target may be private or modules still answering…</span>':''}
+          </div>`;
+      } else {
+        summaryContent.innerHTML = '<span class="muted small">Collecting signals… first avatar/name will appear here live.</span>';
+      }
+      if(summary.photos.length){
+        photosCard.style.display='';
+        photosContent.innerHTML = '<div class="photos-strip">'+ summary.photos.slice(0,12).map(p=>`<a href="${escapeHtml(p.url)}" target="_blank" rel="noreferrer"><img src="${escapeHtml(p.thumbnailUrl||p.url)}" alt="${escapeHtml(p.title||'')}" title="${escapeHtml((p.title||'')+' '+(p.place?.name||''))}" onerror="this.style.display='none'"></a>`).join('') + '</div>';
+      }
+      // keep All Locations grid in sync even before timeline arrives
+      try{ renderAllLocations(); }catch{}
+      // if timeline already received, keep its Maps link updated with latest location
+      if(timelineData){ try{ timelineMapsLink.href = `https://www.google.com/maps/search/${encodeURIComponent(summary.locations[0]?.location||timelineData.profile?.location||'')}`; }catch{} }
+    }
+
+    function renderDomain(){
+      if(!domainModulesAcc.length) return;
+      domainRow.innerHTML = domainModulesAcc.map(d=>{
+        if(d.module==='email-service') return `<div class="card domain-card"><h4>Email service</h4><p><b>${escapeHtml(d.details.provider)}</b> — ${d.details.canReceiveEmail?'can receive mail ✓':'no MX'}</p><p class="mono small muted">${escapeHtml((d.details.mxHosts||[]).join(', ')||'—')}</p></div>`;
+        if(d.module==='email-pattern') return `<div class="card domain-card"><h4>Email pattern</h4><p><span class="mono">${escapeHtml(d.details.pattern)}</span> ${d.details.firstName?`· ${escapeHtml(d.details.firstName)} ${escapeHtml(d.details.lastName||'')}`:''}</p><p class="small muted">Local-part analysis (no external call)</p></div>`;
+        if(d.module==='website') return `<div class="card domain-card"><div style="display:flex;gap:10px;align-items:center"><img src="${escapeHtml(d.details.iconUrl)}" alt="" style="width:28px;height:28px;border-radius:8px;border:1px solid var(--border)" onerror="this.style.display='none'"><div><p style="margin:0"><a href="${escapeHtml(d.details.url)}" target="_blank" rel="noreferrer"><b>${escapeHtml(d.details.title)}</b> ↗</a></p><p class="small muted" style="margin:2px 0 0">${escapeHtml(d.details.description||'—')}</p></div></div></div>`;
+        return '';
+      }).join('');
+    }
+
+    function addModuleResult(mod){
+      if(!mod || seen.has(mod.module)) return;
+      seen.add(mod.module);
+      // merge into summary (mirror server merge)
+      const p = mod.profile;
+      if(p){
+        if(p.avatarUrl && !summary.profilePictures.some(x=>x.url===p.avatarUrl)) summary.profilePictures.push({module:mod.module,url:p.avatarUrl});
+        if(p.displayName) summary.names.push({module:mod.module,value:p.displayName});
+        if(p.username) summary.usernames.push({module:mod.module,value:p.username});
+        if(p.location||p.countryCode) summary.locations.push({module:mod.module,location:p.location,countryCode:p.countryCode});
+        if(p.profileUrl) summary.links.push({module:mod.module,url:p.profileUrl});
+        if(p.createdAt) summary.dates.push({module:mod.module,kind:'createdAt',value:p.createdAt});
+        if(p.lastActiveAt) summary.dates.push({module:mod.module,kind:'lastActiveAt',value:p.lastActiveAt});
+      }
+      const ex = mod.extras;
+      if(ex){
+        if(ex.websiteUrl) summary.links.push({module:mod.module,url:ex.websiteUrl});
+        if(Array.isArray(ex.photos)) ex.photos.forEach(ph=>{ if(ph.url && !summary.photos.some(x=>x.url===ph.url)) summary.photos.push({module:mod.module,url:ph.url,thumbnailUrl:ph.thumbnailUrl||ph.url,title:ph.title,place:ph.place})});
+        if(Array.isArray(ex.recoveryPhones)) ex.recoveryPhones.forEach(ph=>{ if(ph) summary.phoneNumbers.push({module:mod.module,value:ph})});
+        if(mod.module==='data-breach'){
+          if(ex.firstBreachedAt) summary.dates.push({module:mod.module,kind:'firstBreachedAt',value:ex.firstBreachedAt});
+          if(ex.lastBreachedAt && ex.lastBreachedAt!==ex.firstBreachedAt) summary.dates.push({module:mod.module,kind:'lastBreachedAt',value:ex.lastBreachedAt});
+          (ex.records||[]).forEach(r=>{ if(r.phoneNumber) summary.phoneNumbers.push({module:mod.module,value:r.phoneNumber})});
+        }
+      }
+      emailModulesAcc.push(mod);
+      activeModules = emailModulesAcc.slice();
+      renderSummary();
+      // Dedicated sections: timeline + socials are rendered outside masonry for full access
+      if(mod.module==='google-timeline'){
+        timelineData = mod;
+        renderTimeline(mod);
+        renderAllLocations();
+        resultsCount.textContent = String(emailModulesAcc.length + domainModulesAcc.length);
+        return;
+      }
+      if(mod.extras && 'status' in mod.extras){
+        socialAcc.push(mod);
+        renderSocials();
+        resultsCount.textContent = String(emailModulesAcc.length + domainModulesAcc.length);
+        // still also show as masonry card for filter? no — keep only in dedicated grid
+        return;
+      }
+      renderModuleCard(mod, true);
+      applyFilters();
+      resultsCount.textContent = String(emailModulesAcc.length + domainModulesAcc.length);
+    }
+
+    function renderTimeline(mod){
+      const ex = mod.extras||{};
+      const entries = ex.entries||[];
+      timelineSection.style.display='';
+      timelineMeta.textContent = `${ex.entryCount||entries.length} entries · ${ex.locationCount||'—'} distinct places · ${fmtDate(ex.earliest)} → ${fmtDate(ex.latest)}`;
+      const firstPlace = entries[0]?.place;
+      timelineMapsLink.href = firstPlace ? `https://www.google.com/maps/search/${encodeURIComponent(firstPlace.name||firstPlace.address||'')}` : `https://www.google.com/maps/search/${encodeURIComponent(mod.profile?.location||'')}`;
+      timelineEntries.innerHTML = entries.map(e=>`
+        <div class="pos" style="border-left:3px solid var(--brand);padding-left:12px">
+          <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+            <b style="font-size:13px">${escapeHtml(e.title||e.place?.name||'Location')}</b>
+            <span class="mono small muted">${e.date?fmtDate(e.date):'undated'}</span>
+          </div>
+          <div class="small muted">${escapeHtml(e.place?.name||'')}${e.place?.address?` · ${escapeHtml(e.place.address)}`:''}</div>
+          <div class="small" style="margin-top:4px">
+            <span class="chip-mini">${escapeHtml(e.type)}</span>
+            ${e.url?`<a href="${escapeHtml(e.url)}" target="_blank" rel="noreferrer" style="color:var(--brand);margin-left:6px">View ↗</a>`:''}
+            ${e.place?.name?`<a href="https://www.google.com/maps/search/${encodeURIComponent(e.place.name)}" target="_blank" rel="noreferrer" class="chip-mini" style="margin-left:6px">Maps ↗</a>`:''}
+          </div>
+        </div>
+      `).join('') || '<span class="muted small">No timeline entries — target has no public geo signals</span>';
+      renderAllLocations();
+    }
+    function renderAllLocations(){
+      // Show every location from summary (full access)
+      if(!summary.locations.length){ allLocationsGrid.innerHTML='<span class="muted small">No locations reported</span>'; return; }
+      const uniq = [];
+      const seenL = new Set();
+      for(const l of summary.locations){
+        const key = (l.location||l.countryCode||'').toLowerCase();
+        if(!key || seenL.has(key)) continue;
+        seenL.add(key); uniq.push(l);
+      }
+      allLocationsGrid.innerHTML = uniq.map(l=>`<a class="tag mono" href="https://www.google.com/maps/search/${encodeURIComponent(l.location||l.countryCode)}" target="_blank" rel="noreferrer">${escapeHtml(l.location||l.countryCode)} <span class="muted" style="font-size:10px">· ${escapeHtml(l.module)}</span> ↗</a>`).join('');
+    }
+    function renderSocials(){
+      // Deduplicate by platform
+      const byPlat = new Map();
+      for(const m of socialAcc) byPlat.set(m.module, m);
+      const list = Array.from(byPlat.values()).sort((a,b)=> (a.extras.status==='found'?-1:1));
+      socialSection.style.display='';
+      const found = list.filter(x=>x.extras.status==='found').length;
+      socialMeta.textContent = `${list.length} handles · ${found} found · ${list.length-found} to verify — derived from ${deriveHandleHint()} — tap any to open`;
+      socialGrid.innerHTML = list.map(m=>{
+        const st = m.extras.status;
+        const col = st==='found'?'var(--brand)': st==='not_found'?'#f87171':'#fbbf24';
+        const label = st==='found'?'found ✓': st==='not_found'?'not found':'check manually';
+        const handle = m.extras.username || m.profile?.username || '—';
+        const url = m.extras.url || m.profile?.profileUrl || '#';
+        return `<div class="pos" style="padding:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <b style="font-size:13px">${escapeHtml(m.extras.label||m.module)}</b>
+            <span class="chip-mini" style="border-color:${col};color:${col}">${label}</span>
+          </div>
+          <div class="mono small" style="margin-top:6px"><a href="${escapeHtml(url)}" target="_blank" rel="noreferrer" style="color:var(--brand)">@${escapeHtml(handle)} ↗</a></div>
+          <div class="small muted" style="margin-top:4px;word-break:break-all">${escapeHtml(url)}</div>
+        </div>`;
+      }).join('');
+    }
+    function deriveHandleHint(){
+      try{ return emailInput.value.split('@')[0] || summary.usernames[0]?.value || 'email local part'; }catch{ return 'email'; }
+    }
+
+    function renderModuleCard(mod, animate){
+      const isRich = mod.depth==='rich';
+      const cat = CATEGORY_LABEL[mod.category]||mod.category;
+      const profile = mod.profile;
+      const extras = mod.extras;
+      const found = isRich ? !!profile : true; // basic always "Has Accounts" style
+      let body = '';
+      if(mod.module==='linkedin' && profile){
+        const pos = (extras?.positions||[]).map(po=>`
+          <div class="pos">
+            <div class="pos__head">
+              <span class="pos__logo">${po.company?.logoUrl?`<img src="${escapeHtml(po.company.logoUrl)}" alt="">`:'🏢'}</span>
+              <div><div style="font-weight:700;font-size:13px">${escapeHtml(po.title)}</div><div class="muted small">${escapeHtml(po.company?.name||'')} ${po.period?.isCurrent?'<span style="color:var(--brand)">· Current</span>':''}</div></div>
+            </div>
+            ${po.description?`<div class="small muted" style="margin-top:6px">${escapeHtml(po.description)}</div>`:''}
+            <div class="small muted" style="margin-top:4px">${po.period?`${po.period.start?.year||''} — ${po.period.isCurrent?'Present':po.period.end?.year||''}`:''}</div>
+          </div>`).join('');
+        const edu = (extras?.education||[]).map(ed=>`<div class="small"><b>${escapeHtml(ed.school?.name||'')}</b> — ${escapeHtml(ed.degree||'')} ${escapeHtml(ed.fieldOfStudy||'')}</div>`).join('');
+        body = `
+          ${profile.bio?`<div class="kv-row"><div class="kv-value">${escapeHtml(profile.bio)}</div></div>`:''}
+          ${extras?.about?`<div class="kv-row"><div class="kv-label">About</div><div class="kv-value">${escapeHtml(extras.about)}</div></div>`:''}
+          <div class="kv-row"><div class="kv-label">Positions</div><div style="display:flex;flex-direction:column;gap:8px">${pos||'<span class="muted small">—</span>'}</div></div>
+          ${edu?`<div class="kv-row"><div class="kv-label">Education</div><div class="kv-value">${edu}</div></div>`:''}
+          ${extras?.skills?.length?`<div class="kv-row"><div class="kv-label">Skills</div><div class="chips">${extras.skills.map(s=>`<span class="chip-mini">${escapeHtml(s)}</span>`).join('')}</div></div>`:''}
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><span class="chip-mini">Connections: ${extras?.connectionCount||'—'}${extras?.isConnectionCountCapped?' (500+ capped)':''}</span><span class="chip-mini">Followers: ${profile.followerCount??'—'}</span></div>
+        `;
+      } else if(mod.module==='github' && profile){
+        body = `
+          ${profile.bio?`<div class="kv-value">${escapeHtml(profile.bio)}</div>`:''}
+          <div class="chips" style="margin-top:8px"><span class="chip-mini">Repos: ${extras?.publicRepoCount??'—'}</span><span class="chip-mini">Followers: ${profile.followerCount??'—'}</span><span class="chip-mini">${extras?.isHireable?'Hireable ✓':'Not hireable'}</span></div>
+          ${extras?.company?`<div class="kv-row"><div class="kv-label">Company</div><div class="kv-value">${escapeHtml(extras.company)}</div></div>`:''}
+          ${extras?.websiteUrl?`<div class="kv-row"><div class="kv-label">Website</div><div class="kv-value"><a href="${escapeHtml(extras.websiteUrl)}" target="_blank" rel="noreferrer">${escapeHtml(extras.websiteUrl)}</a></div></div>`:''}
+          ${extras?.xHandle?`<div class="kv-row"><div class="kv-label">X</div><div class="kv-value mono">${escapeHtml(extras.xHandle)}</div></div>`:''}
+        `;
+      } else if(mod.module==='gravatar' && profile){
+        body = `
+          ${profile.bio?`<div class="kv-value">${escapeHtml(profile.bio)}</div>`:''}
+          ${extras?.verifiedAccounts?.length?`<div class="kv-row"><div class="kv-label">Verified accounts</div><div class="chips">${extras.verifiedAccounts.map(a=>`<a class="chip-mini" href="${escapeHtml(a.url)}" target="_blank" rel="noreferrer">${escapeHtml(a.shortname)}:${escapeHtml(a.username||'')}</a>`).join('')}</div></div>`:''}
+        `;
+      } else if(mod.module==='duolingo' && profile){
+        const courses = (extras?.courses||[]).map(c=>`<span class="chip-mini">${escapeHtml(c.title)} · ${c.xp} XP</span>`).join('');
+        body = `
+          <div class="chips"><span class="chip-mini">XP: ${extras?.totalXp??0}</span><span class="chip-mini">Streak: ${extras?.currentStreakDays??0}d (max ${extras?.longestStreakDays??0})</span><span class="chip-mini">${extras?.hasPlus?'Plus ✓':'Free'}</span></div>
+          ${courses?`<div class="kv-row"><div class="kv-label">Courses</div><div class="chips">${courses}</div></div>`:''}
+          <div class="kv-row"><div class="kv-label">Linked</div><div class="kv-value small">${extras?.isGoogleLinked?'Google ✓':''} ${extras?.isFacebookLinked?'Facebook ✓':''} ${!extras?.isGoogleLinked&&!extras?.isFacebookLinked?'—':''}</div></div>
+        `;
+      } else if(mod.module==='adobe' && profile){
+        body = `<div class="chips">${(extras?.signInMethods||[]).map(m=>`<span class="chip-mini">${escapeHtml(m)}</span>`).join('')}</div><div class="kv-row"><div class="kv-label">Status</div><div class="kv-value">${escapeHtml(extras?.accountStatus||'—')} ${extras?.hasLinkedBusinessAccount?'<span class="badge-risk" style="margin-left:6px">Business linked</span>':''}</div></div>`;
+      } else if(mod.module==='microsoft' || mod.module==='teams'){
+        body = `
+          ${extras?.organization?`<div class="kv-row"><div class="kv-label">Organization</div><div class="kv-value">${escapeHtml(extras.organization)}</div></div>`:''}
+          ${extras?.recoveryEmails?.length?`<div class="kv-row"><div class="kv-label">Recovery email</div><div class="kv-value mono">${escapeHtml(extras.recoveryEmails.join(', '))}</div></div>`:''}
+          ${extras?.recoveryPhones?.length?`<div class="kv-row"><div class="kv-label">Recovery phone</div><div class="kv-value mono">${escapeHtml(extras.recoveryPhones.join(', '))}</div></div>`:''}
+          ${profile?.location?`<div class="kv-row"><div class="kv-label">Country</div><div class="kv-value">${escapeHtml(profile.location)}</div></div>`:''}
+        `;
+      } else if(mod.module==='google-photos' || mod.module==='google-profile' || mod.module==='google-reviews'){
+        if(mod.module==='google-photos'){
+          body = (extras?.photos||[]).slice(0,4).map(p=>`<a href="${escapeHtml(p.url)}" target="_blank" rel="noreferrer" style="display:block;margin-bottom:6px"><img src="${escapeHtml(p.thumbnailUrl||p.url)}" alt="" style="width:100%;border-radius:10px;border:1px solid var(--border)" onerror="this.style.display='none'"><div class="small"><b>${escapeHtml(p.title||'Photo')}</b> <span class="muted">· ${escapeHtml(p.place?.name||'')}</span></div></a>`).join('') || '<span class="muted small">No public photos</span>';
+        } else if(mod.module==='google-reviews'){
+          body = (extras?.reviews||[]).map(r=>`<div class="pos" style="margin-bottom:8px"><div style="font-weight:700">★ ${r.rating} · ${escapeHtml(r.place?.name||'Place')}</div><div class="small">${escapeHtml(r.text||'')}</div><div class="small muted">${fmtDate(r.reviewedAt)}</div></div>`).join('') || '<span class="muted small">No reviews</span>';
+        } else {
+          body = `<div class="chips">${(extras?.apps||[]).map(a=>`<span class="chip-mini">${escapeHtml(a)}</span>`).join('')}</div><div class="small muted" style="margin-top:6px">GAIA: <span class="mono">${escapeHtml(extras?.accountId||'—')}</span></div>`;
+        }
+      } else if(mod.module==='data-breach'){
+        const rows = (extras?.records||[]).map(r=>`<tr><td><b>${escapeHtml(r.breachName)}</b><div class="small muted">${escapeHtml(r.domain||'')}</div></td><td class="mono small">${escapeHtml(fmtDate(r.breachedAt))}</td><td class="mono small">${escapeHtml(r.username||'—')}</td><td class="mono small">${escapeHtml(r.password||'—')}</td><td class="mono small">${escapeHtml(r.ipAddress||r.phoneNumber||'—')}</td></tr>`).join('');
+        body = `<div class="chips"><span class="chip-mini">Records: ${extras?.recordCount||0}</span><span class="chip-mini">First: ${fmtDate(extras?.firstBreachedAt)}</span><span class="chip-mini">Last: ${fmtDate(extras?.lastBreachedAt)}</span></div><div style="overflow:auto;margin-top:10px;border:1px solid var(--border);border-radius:10px"><table class="breach-table"><thead><tr><th>Breach</th><th>Date</th><th>User</th><th>Password</th><th>IP/Phone</th></tr></thead><tbody>${rows||'<tr><td colspan=5 class="muted">No records</td></tr>'}</tbody></table></div>`;
+      } else if(mod.module==='google-timeline'){
+        const entries = extras?.entries||[];
+        const count = extras?.entryCount||entries.length;
+        body = `
+          <div class="chips"><span class="chip-mini">${count} entries</span><span class="chip-mini">${extras?.locationCount||'—'} places</span><span class="chip-mini">${fmtDate(extras?.earliest)} → ${fmtDate(extras?.latest)}</span></div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+            ${entries.map(e=>`<div class="pos" style="border-left:3px solid var(--brand);padding-left:10px"><div style="display:flex;justify-content:space-between;gap:8px"><b style="font-size:13px">${escapeHtml(e.title|| e.place?.name|| 'Location')}</b><span class="mono small muted">${e.date?fmtDate(e.date):'undated'}</span></div><div class="small muted">${escapeHtml(e.place?.name||'')}${e.place?.address?` · ${escapeHtml(e.place.address)}`:''}</div><div class="small"><span class="chip-mini">${escapeHtml(e.type)}</span> ${e.url?`<a href="${escapeHtml(e.url)}" target="_blank" rel="noreferrer" style="color:var(--brand)">View ↗</a>`:''}</div></div>`).join('') || '<span class="muted small">No timeline entries</span>'}
+          </div>
+          <div class="small muted" style="margin-top:8px">Timeline is inferred from public Photos/Reviews/Profile locations. Private Google Timeline data is not exposed — this is OSINT reconstruction.</div>
+        `;
+      } else if(mod.module==='whatsapp'){
+        const wa = extras?.waUrl || `https://wa.me/${(extras?.phone||'').replace(/[^0-9]/g,'')}`;
+        const phone = extras?.phone || profile?.username || '—';
+        const st = extras?.status || 'found';
+        body = `
+          <div class="kv-row"><div class="kv-label">Phone</div><div class="kv-value mono"><a href="${escapeHtml(wa)}" target="_blank" rel="noreferrer" style="color:var(--brand)">${escapeHtml(phone)} ↗</a> <span class="chip-status ${st==='found'?'found':''}" style="margin-left:6px">${escapeHtml(st)}</span></div></div>
+          <div class="small muted">Derived from breach/recovery phone. Opening wa.me does not notify without sending a message. Verify number formatting before use.</div>
+          <div style="margin-top:8px"><a class="btn btn-ghost btn-sm" href="${escapeHtml(wa)}" target="_blank" rel="noreferrer">Open in WhatsApp ↗</a></div>
+        `;
+      } else if(extras?.status){
+        const st = extras.status; // found | not_found | unknown
+        const statusColor = st==='found' ? 'var(--brand)' : st==='not_found' ? '#f87171' : '#fbbf24';
+        const statusText = st==='found' ? 'found ✓' : st==='not_found' ? 'not found' : 'check manually (?)';
+        const url = extras.url || profile?.profileUrl || '#';
+        body = `
+          <div class="kv-row"><div class="kv-label">Handle</div><div class="kv-value mono"><a href="${escapeHtml(url)}" target="_blank" rel="noreferrer" style="color:var(--brand)">@${escapeHtml(extras.username||profile?.username||'—')} ↗</a></div></div>
+          <div class="kv-row"><div class="kv-label">Status</div><div class="kv-value"><span class="chip-mini" style="border-color:${statusColor};color:${statusColor}">${statusText}</span> <a class="small" href="${escapeHtml(url)}" target="_blank" rel="noreferrer" style="color:var(--brand)">Open ${escapeHtml(extras.label||mod.module)} ↗</a></div></div>
+          ${st==='unknown'?'<div class="small muted">This platform blocks automated checks (429/403). Open the link manually — if the profile loads, the handle is taken.</div>':''}
+          ${st==='found'?'<div class="small" style="color:var(--brand)">Username exists on this platform (username enumeration — no notification sent).</div>':''}
+        `;
+      } else if(mod.depth==='basic'){
+        body = `<div class="kv-row"><div class="kv-value">Account <span style="color:var(--brand);font-weight:700">exists</span> on this platform (silent registration check via holehe-style probes — no notification sent).</div></div>`;
+      } else {
+        body = `<div class="kv-row"><div class="kv-value">${profile?.bio?escapeHtml(profile.bio):'<span class="muted">No bio</span>'}</div></div>`;
+      }
+
+      const el = document.createElement('article');
+      el.className='mod';
+      el.dataset.module = mod.module;
+      el.dataset.category = mod.category;
+      el.dataset.depth = mod.depth||'rich';
+      el.innerHTML = `
+        <div class="mod__head">
+          <div class="mod__title">
+            <span class="mark">${(MODULE_ICONS[mod.module]||mod.module.slice(0,2)).toUpperCase()}</span>
+            <div>
+              <div class="mod__name">${escapeHtml(mod.module)}</div>
+              <div class="mod__cat">${escapeHtml(cat)} · ${escapeHtml(mod.depth||'')} ${profile?.accountType?'· '+escapeHtml(profile.accountType):''}</div>
+            </div>
+          </div>
+          <span class="chip-status ${found?'found':''}">${found?'found':'not found'}</span>
+        </div>
+        <div class="mod__body">
+          ${(profile?.avatarUrl||extras?.websiteUrl)?`
+            <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:10px">
+              ${profile?.avatarUrl?`<img src="${escapeHtml(profile.avatarUrl)}" alt="" style="width:64px;height:64px;border-radius:12px;object-fit:cover;border:1px solid var(--border)" onerror="this.style.display='none'">`:''}
+              <div style="min-width:0;flex:1">
+                ${profile?.displayName?`<div style="font-weight:700">${escapeHtml(profile.displayName)}</div>`:''}
+                ${profile?.username?`<div class="mono small muted">@${escapeHtml(profile.username)}</div>`:''}
+                ${profile?.profileUrl?`<a class="small" href="${escapeHtml(profile.profileUrl)}" target="_blank" rel="noreferrer" style="color:var(--brand)">View profile ↗</a>`:''}
+                ${profile?.location?`<div class="small muted">${escapeHtml(profile.location)}</div>`:''}
+              </div>
+            </div>`:''}
+          <div class="kv">${body}</div>
+          ${profile?.createdAt||profile?.lastActiveAt?`<div class="small muted" style="margin-top:10px">Created: ${fmtDate(profile.createdAt)} · Active: ${fmtDate(profile.lastActiveAt)}</div>`:''}
+        </div>
+      `;
+      if(animate) { el.style.opacity='0'; el.style.transform='translateY(6px)'; setTimeout(()=>{el.style.transition='opacity .25s, transform .25s'; el.style.opacity='1'; el.style.transform='none'}, 30); }
+      el._moduleId = mod.module;
+      masonry.appendChild(el);
+    }
+
+    function applyFilters(){
+      const q = filterSearch.value.trim().toLowerCase();
+      const cat = filterCategory.value;
+      const depth = filterDepth.value;
+      let visible=0;
+      [...masonry.children].forEach(el=>{
+        const name = el.dataset.module;
+        const c = el.dataset.category;
+        const d = el.dataset.depth;
+        const hide = (q && !name.includes(q)) || (cat!=='all' && c!==cat) || (depth!=='all' && d!==depth);
+        el.style.display = hide?'none':'';
+        if(!hide) visible++;
+      });
+      visibleCount.textContent = String(visible);
+      emptyState.style.display = visible===0 && masonry.children.length>0 ? '' : 'none';
+    }
+    filterSearch.addEventListener('input', applyFilters);
+    filterCategory.addEventListener('change', applyFilters);
+    filterDepth.addEventListener('change', applyFilters);
+
+    // SSE streaming via fetch
+    const t0 = Date.now();
+    try{
+      const resp = await fetch(`/api/search/stream?email=${encodeURIComponent(email)}`, { signal: streamController.signal, headers:{Accept:'text/event-stream'}});
+      if(!resp.ok || !resp.body) throw new Error('Stream failed: '+resp.status);
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let done = false;
+      const pump = async ()=>{
+        while(!done){
+          const {value, done:readerDone} = await reader.read();
+          if(readerDone) break;
+          buffer += decoder.decode(value, {stream:true});
+          const parts = buffer.split('\n\n');
+          buffer = parts.pop();
+          for(const part of parts){
+            const lines = part.split('\n');
+            let event = 'message';
+            let dataStr = '';
+            for(const line of lines){
+              if(line.startsWith('event:')) event = line.slice(6).trim();
+              else if(line.startsWith('data:')) dataStr += line.slice(5).trim();
+            }
+            if(!dataStr) continue;
+            try{
+              const data = JSON.parse(dataStr);
+              if(event==='progress'){
+                total = data.total || total;
+                completed = data.completed || completed;
+                const pct = Math.min(98, Math.round((completed/total)*100) || 8);
+                setProgress(pct, `Checking: ${data.checking||'—'}`, 'live');
+              } else if(event==='module'){
+                completed = data.completed || completed;
+                total = data.total || total;
+                const pct = data.percent ?? Math.round((completed/total)*100);
+                setProgress(pct, `Found: ${data.result?.module||'signal'}`, 'live');
+                if(data.kind==='domain'){
+                  domainModulesAcc.push(data.result);
+                  renderDomain();
+                  resultsCount.textContent = String(emailModulesAcc.length + domainModulesAcc.length);
+                } else if(data.kind==='email'){
+                  addModuleResult(data.result);
+                }
+                if(!results.classList.contains('active')){
+                  results.classList.add('active');
+                }
+              } else if(event==='done'){
+                done = true;
+                currentReport = data;
+                const dur = data.meta?.durationMs ?? (Date.now()-t0);
+                resultsDuration.textContent = dur + ' ms';
+                resultsDomainPill.textContent = data.subjects.domain;
+                resultsStatus.textContent = data.status==='found'?'found':'not found';
+                resultsStatus.style.background = data.status==='found'?'rgba(94,228,209,.18)':'rgba(248,113,113,.15)';
+                resultsStatus.style.color = data.status==='found'?'var(--brand)':'#fca5a5';
+                resultsStatus.style.borderColor = data.status==='found'?'rgba(94,228,209,.35)':'rgba(248,113,113,.35)';
+                setProgress(100, 'Done — all sources answered', 'done');
+                searchBtn.disabled=false; searchBtn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg> Search Free';
+                resultsCount.textContent = String((data.emailModules?.length||0)+(data.domainModules?.length||0));
+                // ensure history refresh
+                loadHistory();
+                // if nothing streamed but report has modules (should not happen), render them
+                if(masonry.children.length===0 && socialAcc.length===0 && !timelineData && data.emailModules?.length){
+                  data.emailModules.forEach(m=>{
+                    if(m.module==='google-timeline'){ timelineData=m; renderTimeline(m); return; }
+                    if(m.extras && 'status' in m.extras){ socialAcc.push(m); renderSocials(); return; }
+                    if(!seen.has(m.module)) renderModuleCard(m,false);
+                  });
+                  domainRow.innerHTML = (data.domainModules||[]).map(d=>{
+                    if(d.module==='email-service') return `<div class="card domain-card"><h4>Email service</h4><p><b>${escapeHtml(d.details.provider)}</b></p></div>`;
+                    if(d.module==='website') return `<div class="card domain-card"><h4>Website</h4><p><b>${escapeHtml(d.details.title)}</b></p></div>`;
+                    return '';
+                  }).join('');
+                  applyFilters();
+                  results.classList.add('active');
+                }
+                // ensure summary rendered if still empty
+                if(!summaryContent.innerHTML.trim()) renderSummary();
+                streamState.textContent='done';
+                setTimeout(()=>progressWrap.classList.remove('active'), 1200);
+                // push to URL
+                try{ history.replaceState(null,'',`?email=${encodeURIComponent(email)}`)}catch{}
+                return;
+              }
+            }catch(e){ /* ignore */ }
+          }
+        }
+      };
+      await pump();
+    }catch(err){
+      if(err.name==='AbortError') return;
+      setProgress(100,'Error — '+err.message.slice(0,80),'error');
+      streamState.textContent='error';
+      searchBtn.disabled=false; searchBtn.innerHTML='Search Free';
+      console.error(err);
+      toast('Search error: '+err.message.slice(0,120));
+      // fallback to non-stream API
+      try{
+        const r = await fetch('/api/v1/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+        const j = await r.json();
+        if(j?.data?.profile){
+          const p=j.data.profile;
+          // render fallback report — use proper dedicated sections for timeline/social
+          currentReport={query:{kind:'email',value:email},subjects:{email,domain:email.split('@')[1]},status:p.status||'found',summary:p.summary||summary,emailModules:p.emailModules||[],domainModules:p.domainModules||[],meta:p.meta||{durationMs:Date.now()-t0}};
+          (currentReport.emailModules||[]).forEach(m=>{
+            if(seen.has(m.module)) return;
+            if(m.module==='google-timeline'){ seen.add(m.module); timelineData=m; renderTimeline(m); return; }
+            if(m.extras && 'status' in m.extras){ seen.add(m.module); socialAcc.push(m); renderSocials(); return; }
+            renderModuleCard(m,false); seen.add(m.module);
+          });
+          (currentReport.domainModules||[]).forEach(d=>{ domainModulesAcc.push(d); });
+          // merge fallback summary
+          Object.assign(summary, p.summary||summary);
+          renderDomain(); renderSummary(); resultsCount.textContent=String((currentReport.emailModules.length||0)+(currentReport.domainModules.length||0));
+          results.classList.add('active'); setProgress(100,'Done (fallback)','done'); streamState.textContent='done'; resultsDuration.textContent=(currentReport.meta.durationMs||(Date.now()-t0))+' ms';
+        }
+      }catch(e2){ console.error('fallback failed', e2); toast('Fallback failed: '+e2.message.slice(0,100)); }
+    }
+  });
+
+  // URL prefill
+  const params = new URLSearchParams(location.search);
+  if(params.get('email')){
+    emailInput.value = params.get('email');
+    searchForm.requestSubmit();
+  }
+
+  // Exports for single search
+  function toCSVRows(report){
+    const rows = [['module','category','depth','displayName','username','profileUrl','bio','location','accountType','createdAt','lastActiveAt','extras']];
+    (report.emailModules||[]).forEach(m=>{
+      rows.push([m.module,m.category,m.depth||'',m.profile?.displayName||'',m.profile?.username||'',m.profile?.profileUrl||'',(m.profile?.bio||'').replace(/\n/g,' '),m.profile?.location||'',m.profile?.accountType||'',m.profile?.createdAt||'',m.profile?.lastActiveAt||'',JSON.stringify(m.extras||{}).replace(/"/g,'""')]);
+    });
+    (report.domainModules||[]).forEach(d=>{
+      rows.push([d.module,d.category,'',d.details?.provider||d.details?.title||'',d.details?.url||'',d.details?.url||'','','','','','',JSON.stringify(d.details||{}).replace(/"/g,'""')]);
+    });
+    return rows;
+  }
+  function downloadBlob(content, mime, filename){
+    const blob = new Blob([content], {type:mime});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 2000);
+  }
+  window.exportCSV = ()=>{
+    if(!currentReport){ alert('Run a search first'); return; }
+    const rows = toCSVRows(currentReport);
+    const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    downloadBlob(csv,'text/csv;charset=utf-8',`behind-the-email-${currentReport.subjects.email}.csv`);
+  };
+  window.exportXLSX = ()=>{
+    if(!currentReport){ alert('Run a search first'); return; }
+    const rows = toCSVRows(currentReport);
+    // Try real SheetJS if online, otherwise shim will auto-fallback to CSV
+    try{
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Results');
+      const sum = currentReport.summary;
+      const s2 = [['field','value']];
+      (sum.names||[]).forEach(n=>s2.push(['name:'+n.module,n.value]));
+      (sum.usernames||[]).forEach(u=>s2.push(['username:'+u.module,u.value]));
+      (sum.links||[]).forEach(l=>s2.push(['link:'+l.module,l.url]));
+      const ws2 = XLSX.utils.aoa_to_sheet(s2);
+      XLSX.utils.book_append_sheet(wb, ws2, 'Summary');
+      // Store rows for shim fallback
+      wb._rows = rows;
+      XLSX.writeFile(wb, `behind-the-email-${currentReport.subjects.email}.xlsx`);
+    }catch(e){ console.warn('XLSX fallback', e); exportCSV(); }
+  };
+  window.exportPDF = ()=>{
+    if(!currentReport){ alert('Run a search first'); return; }
+    if(window.jspdf && window.jspdf.jsPDF){
+      try{
+        const {jsPDF} = window.jspdf;
+        const doc = new jsPDF({unit:'pt',format:'a4'});
+        let y=40;
+        doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.text('Behind the Email — Dossier',40,y); y+=20;
+        doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.text(`Email: ${currentReport.subjects.email}  |  Domain: ${currentReport.subjects.domain}  |  Status: ${currentReport.status}  |  ${new Date().toLocaleString()}`,40,y); y+=16;
+        doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.text('Summary',40,y); y+=14;
+        doc.setFont('helvetica','normal'); doc.setFontSize(9);
+        const sums = [];
+        (currentReport.summary.names||[]).forEach(n=>sums.push(`Name (${n.module}): ${n.value}`));
+        (currentReport.summary.usernames||[]).forEach(u=>sums.push(`Username (${u.module}): @${u.value}`));
+        (currentReport.summary.links||[]).slice(0,8).forEach(l=>sums.push(`Link (${l.module}): ${l.url}`));
+        if(sums.length===0) sums.push('No summary signals');
+        sums.forEach(s=>{ if(y>750){doc.addPage(); y=40;} doc.text(doc.splitTextToSize(s,520),40,y); y+=12; });
+        y+=8; doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.text('Modules',40,y); y+=14; doc.setFont('helvetica','normal'); doc.setFontSize(8);
+        [...(currentReport.emailModules||[]),...(currentReport.domainModules||[])].forEach(m=>{
+          if(y>740){doc.addPage(); y=40;}
+          const title = `${m.module} [${m.category}${m.depth?' · '+m.depth:''}]`;
+          doc.setFont('helvetica','bold'); doc.text(title,40,y); y+=10; doc.setFont('helvetica','normal');
+          const body = m.profile?`${m.profile.displayName||''} ${m.profile.username?'@'+m.profile.username:''} ${m.profile.bio||''}`.trim() : JSON.stringify(m.extras||m.details||{}).slice(0,600);
+          const lines = doc.splitTextToSize(body||'—',520);
+          doc.text(lines,40,y); y+= lines.length*9 + 8;
+        });
+        doc.save(`behind-the-email-${currentReport.subjects.email}.pdf`);
+        return;
+      }catch(e){ console.warn('jsPDF failed, fallback', e); }
+    }
+    // Offline fallback: open printable HTML (works in sandboxed iframe preview too)
+    const w = window.open('','_blank');
+    if(!w){ alert('Popup blocked — copying JSON to clipboard instead'); navigator.clipboard.writeText(JSON.stringify(currentReport,null,2)); return; }
+    w.document.write(`<title>Behind the Email — ${escapeHtml(currentReport.subjects.email)}</title><pre style="white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:12px;padding:16px">${escapeHtml(JSON.stringify(currentReport,null,2))}</pre>`);
+    w.document.close(); try{ w.print(); }catch{}
+  };
+  window.copyLink = ()=>{
+    if(!currentReport){ navigator.clipboard.writeText(location.href); return; }
+    const url = `${location.origin}${location.pathname}?email=${encodeURIComponent(currentReport.subjects.email)}`;
+    navigator.clipboard.writeText(url).then(()=>{ const b=$('#resultsStatus'); const t=b.textContent; b.textContent='link copied ✓'; setTimeout(()=>b.textContent=t,1500)});
+  };
+
+  // Bulk
+  window.runBulk = async ()=>{
+    const raw = $('#bulkInput').value.trim();
+    if(!raw){ alert('Paste at least one email'); return; }
+    const emails = [...new Set(raw.split(/[\s,;]+/).map(s=>s.trim().toLowerCase()).filter(s=>s.includes('@')))].slice(0,50);
+    if(emails.length===0){ alert('No valid emails found'); return; }
+    $('#bulkMeta').textContent = `Running ${emails.length} searches — live, batched 4 concurrent…`;
+    $('#bulkTableWrap').style.display='';
+    const tbody = $('#bulkTable tbody'); tbody.innerHTML = `<tr><td colspan=8 class="muted">Streaming…</td></tr>`;
+    try{
+      const res = await fetch('/api/bulk-search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({emails})});
+      const data = await res.json();
+      bulkResults = data.results||[];
+      $('#bulkMeta').textContent = `Done in ${data.durationMs} ms — ${data.foundCount}/${data.totalCount} found`;
+      tbody.innerHTML = bulkResults.map(r=>{
+        const get = (mod)=> r.emailModules?.some(m=>m.module===mod) ? '✓' : '—';
+        const breaches = r.emailModules?.find(m=>m.module==='data-breach')?.extras?.recordCount || 0;
+        const li = r.emailModules?.find(m=>m.module==='linkedin')?.profile?.displayName || '';
+        const gh = r.emailModules?.find(m=>m.module==='github')?.profile?.username || '';
+        const gv = r.emailModules?.find(m=>m.module==='gravatar') ? '✓' : '—';
+        const ms = r.emailModules?.some(m=>m.module==='microsoft')?'✓':'—';
+        return `<tr><td><span class="chip-status ${r.status==='found'?'found':''}">${escapeHtml(r.status)}</span></td><td class="mono"><b>${escapeHtml(r.subjects.email)}</b></td><td>${escapeHtml(li||get('linkedin'))}</td><td>${escapeHtml(gh||get('github'))}</td><td>${gv}</td><td>${ms}</td><td>${breaches?`<span class="badge-risk">${breaches} breaches</span>`:'—'}</td><td class="mono">${r.meta.durationMs} ms</td></tr>`;
+      }).join('') || '<tr><td colspan=8 class="muted">No results</td></tr>';
+      loadHistory();
+    }catch(e){
+      $('#bulkMeta').textContent = 'Bulk error: '+e.message;
+    }
+  };
+  window.exportBulkCSV = ()=>{
+    if(!bulkResults.length){ alert('Run bulk first'); return; }
+    const header = ['status','email','domain','linkedin_name','linkedin_username','github_username','gravatar','microsoft','breaches','durationMs'];
+    const rows = [header];
+    bulkResults.forEach(r=>{
+      rows.push([r.status,r.subjects.email,r.subjects.domain,r.emailModules?.find(m=>m.module==='linkedin')?.profile?.displayName||'',r.emailModules?.find(m=>m.module==='linkedin')?.profile?.username||'',r.emailModules?.find(m=>m.module==='github')?.profile?.username||'',r.emailModules?.some(m=>m.module==='gravatar')?'yes':'no',r.emailModules?.some(m=>m.module==='microsoft')?'yes':'no',r.emailModules?.find(m=>m.module==='data-breach')?.extras?.recordCount||0,r.meta.durationMs]);
+    });
+    const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    downloadBlob(csv,'text/csv;charset=utf-8',`behind-the-email-bulk-${Date.now()}.csv`);
+  };
+  window.exportBulkXLSX = ()=>{
+    if(!bulkResults.length){ alert('Run bulk first'); return; }
+    const header = ['status','email','domain','linkedin_name','linkedin_username','github_username','gravatar','microsoft','breaches','durationMs'];
+    const rows = [header];
+    bulkResults.forEach(r=>{
+      rows.push([r.status,r.subjects.email,r.subjects.domain,r.emailModules?.find(m=>m.module==='linkedin')?.profile?.displayName||'',r.emailModules?.find(m=>m.module==='linkedin')?.profile?.username||'',r.emailModules?.find(m=>m.module==='github')?.profile?.username||'',r.emailModules?.some(m=>m.module==='gravatar')?'yes':'no',r.emailModules?.some(m=>m.module==='microsoft')?'yes':'no',r.emailModules?.find(m=>m.module==='data-breach')?.extras?.recordCount||0,r.meta.durationMs]);
+    });
+    if(window.XLSX){
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Bulk');
+      XLSX.writeFile(wb, `behind-the-email-bulk-${Date.now()}.xlsx`);
+    } else exportBulkCSV();
+  };
+
+  // API playground
+  window.runApi = async ()=>{
+    const email = $('#apiEmail').value.trim().toLowerCase();
+    $('#apiRes').textContent='… loading …';
+    try{
+      const r = await fetch('/api/v1/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+      const j = await r.json();
+      $('#apiRes').textContent = JSON.stringify(j,null,2);
+      $('#apiReq').textContent = `curl -X POST ${location.origin}/api/v1/search \\\n  -H "Content-Type: application/json" \\\n  -d '{"email":"${email}"}'`;
+    }catch(e){ $('#apiRes').textContent='Error: '+e.message }
+  };
+
+  // History
+  window.loadHistory = async ()=>{
+    try{
+      const r = await fetch('/api/history');
+      const j = await r.json();
+      const list = $('#historyList');
+      const searches = j.searches||[];
+      if(!searches.length){ list.innerHTML='<div class="muted small">No searches yet — run one above.</div>'; return; }
+      list.innerHTML = searches.slice(0,20).map(s=>{
+        const safeEmail = escapeHtml(s.subjects.email);
+        const encoded = encodeURIComponent(s.subjects.email);
+        return `
+        <div class="history-item">
+          <div>
+            <b class="mono">${safeEmail}</b> <span class="chip-status ${s.status==='found'?'found':''}" style="margin-left:6px">${escapeHtml(s.status)}</span>
+            <div class="small muted">${escapeHtml(s.subjects.domain)} · ${(s.emailModules?.length||0)+(s.domainModules?.length||0)} modules · ${s.meta?.durationMs||'—'} ms · ${fmtDate(s.searchedAt)}</div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-ghost btn-sm" data-email="${encoded}" onclick="fillDemo(decodeURIComponent(this.dataset.email))">Open</button>
+            <a class="btn btn-ghost btn-sm" href="?email=${encoded}">Link</a>
+          </div>
+        </div>`;
+      }).join('');
+    }catch(e){ $('#historyList').innerHTML='<div class="muted small">Failed to load — '+escapeHtml(e.message)+'</div>'}
+  };
+  window.clearHistory = async ()=>{
+    if(!confirm('Clear all recent searches?')) return;
+    await fetch('/api/history',{method:'DELETE'});
+    loadHistory();
+  };
+  loadHistory();
+})();
+</script>
+</body>
+</html>
